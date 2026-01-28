@@ -86,23 +86,20 @@ class ResultExporter:
         process_time = result.get("process_time", 0)
         success = result.get("success", False)
         error = result.get("error", "")
+        speaker_diarization_enabled = result.get("speaker_diarization_enabled", False)
 
         # 获取文件信息
         audio_name = os.path.basename(audio_path)
 
         # 如果有错误，显示错误信息
         if not success:
-            content = f"""# 音频识别结果
-
-**文件名**: {audio_name}
-**文件路径**: {audio_path}
-**识别状态**: 失败
-**识别时间**: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
-
-## 错误信息
-
-{error}
-"""
+            content = "# 音频识别结果\n\n"
+            content += f"**文件名**: {audio_name}\n"
+            content += f"**文件路径**: {audio_path}\n"
+            content += "**识别状态**: 失败\n"
+            content += f"**识别时间**: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n\n"
+            content += "## 错误信息\n\n"
+            content += f"{error}\n"
         else:
             # 获取文件大小
             file_size = "未知"
@@ -110,23 +107,77 @@ class ResultExporter:
                 size_bytes = os.path.getsize(audio_path)
                 file_size = ResultExporter._format_size(size_bytes)
 
-            content = f"""# 音频识别结果
+            content = "# 音频识别结果\n\n"
+            content += f"**文件名**: {audio_name}\n"
+            content += f"**文件路径**: {audio_path}\n"
+            content += f"**文件大小**: {file_size}\n"
+            content += "**识别状态**: 成功\n"
+            content += f"**识别时间**: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n"
+            content += f"**处理耗时**: {process_time} 秒\n\n"
 
-**文件名**: {audio_name}
-**文件路径**: {audio_path}
-**文件大小**: {file_size}
-**识别状态**: 成功
-**识别时间**: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
-**处理耗时**: {process_time} 秒
+            # 如果启用了说话人分离
+            if speaker_diarization_enabled and result.get("sentences"):
+                sentences = result.get("sentences", [])
+                speakers = result.get("speakers", [])
+                speaker_count = result.get("speaker_count", 0)
 
-## 识别文本
+                # 确保 speakers 都是字符串
+                speakers = [str(s) for s in speakers]
 
-{text}
+                content += f"**说话人数量**: {speaker_count}\n"
+                content += f"**说话人**: {', '.join(speakers)}\n\n"
+                content += "---\n\n"
+                content += "## 识别文本（按说话人标注）\n\n"
 
----
+                # 创建说话人名称映射
+                speaker_names = {}
+                for i, spk in enumerate(speakers):
+                    speaker_names[str(spk)] = f"说话人{chr(65 + i)}"  # 说话人A, 说话人B, ...
 
-*本文件由 Fun-ASR 语音识别系统自动生成*
-"""
+                # 按时间顺序输出，每句话标注说话人
+                for sentence in sentences:
+                    speaker = str(sentence.get("speaker", "unknown"))
+                    speaker_name = speaker_names.get(speaker, speaker)
+                    start_time = sentence.get("start", 0) / 1000
+                    end_time = sentence.get("end", 0) / 1000
+                    sentence_text = sentence.get("text", "")
+
+                    time_range = "({:.1f}s - {:.1f}s)".format(start_time, end_time)
+                    content += "**[{}]** {}\n\n{}\n\n".format(speaker_name, time_range, sentence_text)
+
+                content += "---\n\n"
+                content += "## 按说话人分类\n\n"
+
+                # 按说话人分组
+                speaker_text = {}
+                for sentence in sentences:
+                    speaker = str(sentence.get("speaker", "unknown"))
+                    if speaker not in speaker_text:
+                        speaker_text[speaker] = []
+                    speaker_text[speaker].append(sentence)
+
+                # 输出每个说话人的内容
+                for speaker, speaker_sentences in speaker_text.items():
+                    speaker_name = speaker_names.get(speaker, speaker)
+                    content += f"### {speaker_name}\n\n"
+
+                    for sentence in speaker_sentences:
+                        start_time = sentence.get("start", 0) / 1000
+                        end_time = sentence.get("end", 0) / 1000
+                        sentence_text = sentence.get("text", "")
+                        content += f"[{start_time:.1f}s - {end_time:.1f}s] {sentence_text}\n\n"
+
+                content += "---\n\n"
+                content += "## 完整文本\n\n"
+                content += f"{text}\n\n"
+                content += "---\n\n"
+                content += "*本文件由 Fun-ASR 语音识别系统自动生成（含说话人分离）*\n"
+            else:
+                # 没有说话人分离，直接输出文本
+                content += "## 识别文本\n\n"
+                content += f"{text}\n\n"
+                content += "---\n\n"
+                content += "*本文件由 Fun-ASR 语音识别系统自动生成*\n"
 
         return content
 

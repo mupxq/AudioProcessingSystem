@@ -35,7 +35,8 @@ const elements = {
     loadingText: document.getElementById('loadingText'),
     toast: document.getElementById('toast'),
     gpuOption: document.getElementById('gpuOption'),
-    deviceStatus: document.getElementById('deviceStatus')
+    deviceStatus: document.getElementById('deviceStatus'),
+    speakerDiarization: document.getElementById('speakerDiarization')
 };
 
 // ==================== API 调用 ====================
@@ -66,12 +67,16 @@ async function scanFolder(folderPath) {
 /**
  * 开始识别
  */
-async function startRecognition(files, device = 'cpu') {
+async function startRecognition(files, device = 'cpu', speakerDiarization = false) {
     try {
         const response = await fetch(`${API_BASE}/start-recognition`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ files, device })
+            body: JSON.stringify({
+                files,
+                device,
+                speaker_diarization: speakerDiarization
+            })
         });
 
         const data = await response.json();
@@ -267,13 +272,67 @@ function addResultPreview(result, index) {
     resultItem.className = `result-item ${result.success ? 'success' : 'failed'}`;
 
     if (result.success) {
-        resultItem.innerHTML = `
+        // 检查是否启用了说话人分离
+        const hasSpeakers = result.speaker_diarization_enabled && result.sentences && result.sentences.length > 0;
+
+        let contentHtml = `
             <div class="result-header">
                 <div class="result-file-name">${file.name}</div>
                 <div class="result-status success">成功</div>
             </div>
-            <div class="result-text">${result.text || '(空)'}</div>
         `;
+
+        if (hasSpeakers) {
+            // 显示说话人信息
+            const speakerCount = result.speaker_count || 0;
+            const speakers = result.speakers || [];
+
+            // 创建说话人名称映射
+            const speakerNames = {};
+            for (let i = 0; i < speakers.length; i++) {
+                speakerNames[speakers[i]] = `说话人${String.fromCharCode(65 + i)}`; // 说话人A, 说话人B, ...
+            }
+
+            contentHtml += `
+                <div class="speaker-info">
+                    <strong>检测到 ${speakerCount} 位说话人</strong>
+                </div>
+                <div class="result-text">
+            `;
+
+            // 按说话人分组显示
+            const speakerText = {};
+            result.sentences.forEach(sentence => {
+                const speaker = sentence.speaker || 'unknown';
+                if (!speakerText[speaker]) {
+                    speakerText[speaker] = [];
+                }
+                speakerText[speaker].push(sentence);
+            });
+
+            // 显示每个说话人的内容
+            for (const [speaker, sentences] of Object.entries(speakerText)) {
+                const speakerName = speakerNames[speaker] || speaker;
+                contentHtml += `<div class="speaker-section"><strong>${speakerName}:</strong>`;
+
+                sentences.forEach(sentence => {
+                    const startTime = (sentence.start / 1000).toFixed(1);
+                    const endTime = (sentence.end / 1000).toFixed(1);
+                    contentHtml += `<div class="speaker-sentence">[${startTime}s - ${endTime}s] ${sentence.text}</div>`;
+                });
+
+                contentHtml += `</div>`;
+            }
+
+            contentHtml += `</div>`;
+            contentHtml += `<div class="result-text-full"><strong>完整文本:</strong> ${result.text || '(空)'}</div>`;
+        } else {
+            contentHtml += `
+                <div class="result-text">${result.text || '(空)'}</div>
+            `;
+        }
+
+        resultItem.innerHTML = contentHtml;
     } else {
         resultItem.innerHTML = `
             <div class="result-header">
@@ -379,8 +438,11 @@ elements.startBtn.addEventListener('click', async () => {
         return;
     }
 
+    // 获取说话人分离开关状态
+    const speakerDiarization = elements.speakerDiarization.checked;
+
     try {
-        await startRecognition(state.files, selectedDevice);
+        await startRecognition(state.files, selectedDevice, speakerDiarization);
 
         state.isProcessing = true;
         elements.progressSection.style.display = 'block';

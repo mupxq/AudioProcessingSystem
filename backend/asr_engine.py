@@ -22,32 +22,37 @@ class ASREngine:
     _model = None
     _device = "cpu"  # 默认使用 CPU
 
-    def __new__(cls, device="cpu"):
+    def __new__(cls, device="cpu", enable_speaker_diarization=False):
         """
         单例模式，确保模型只加载一次
 
         Args:
             device: 设备类型，"cpu" 或 "cuda"
+            enable_speaker_diarization: 是否启用说话人分离
         """
         if cls._instance is None:
             with cls._lock:
                 if cls._instance is None:
                     cls._instance = super().__new__(cls)
                     cls._instance._device = device
+                    cls._instance._enable_speaker_diarization = enable_speaker_diarization
         return cls._instance
 
-    def __init__(self, device="cpu"):
+    def __init__(self, device="cpu", enable_speaker_diarization=False):
         """
         初始化 ASR 引擎
 
         Args:
             device: 设备类型，"cpu" 或 "cuda"
+            enable_speaker_diarization: 是否启用说话人分离
         """
+        self._enable_speaker_diarization = enable_speaker_diarization
         # 如果设备改变了或模型未加载，重新加载模型
-        if not hasattr(self, '_initialized') or self._device != device:
+        if not hasattr(self, '_initialized') or self._device != device or getattr(self, '_speaker_enabled', False) != enable_speaker_diarization:
             self._device = device
             self._load_model()
             self._initialized = True
+            self._speaker_enabled = enable_speaker_diarization
 
     @property
     def _current_device(self):
@@ -64,7 +69,8 @@ class ASREngine:
         if AutoModel is None:
             raise RuntimeError("funasr 库未安装，请先安装: pip install funasr")
 
-        print(f"正在加载 Fun-ASR 模型 (设备: {self._device})...")
+        speaker_info = " + 说话人分离" if self._enable_speaker_diarization else ""
+        print(f"正在加载 Fun-ASR 模型 (设备: {self._device}{speaker_info})...")
         start_time = time.time()
 
         try:
@@ -86,6 +92,10 @@ class ASREngine:
                 "punc_model": "ct-punc",   # 标点恢复
             }
 
+            # 添加说话人分离模型
+            if self._enable_speaker_diarization:
+                model_kwargs["spk_model"] = "cam++"
+
             # 只有在设备是 cuda 且可用时才添加 device 参数
             if self._device == "cuda":
                 model_kwargs["device"] = "cuda"
@@ -94,7 +104,7 @@ class ASREngine:
             self._current_device = self._device
 
             load_time = time.time() - start_time
-            print(f"模型加载完成 (使用 {self._device.upper()}), 耗时: {load_time:.2f} 秒")
+            print(f"模型加载完成 (使用 {self._device.upper()}{speaker_info}), 耗时: {load_time:.2f} 秒")
 
         except Exception as e:
             print(f"模型加载失败: {e}")
@@ -135,12 +145,37 @@ class ASREngine:
             # 解析结果
             if result and len(result) > 0:
                 text = result[0].get("text", "")
-                return {
+
+                response = {
                     "success": True,
                     "text": text,
                     "audio_path": audio_path,
                     "process_time": round(process_time, 2),
+                    "speaker_diarization_enabled": self._enable_speaker_diarization,
                 }
+
+                # 如果启用了说话人分离，添加说话人信息
+                if self._enable_speaker_diarization:
+                    sentence_info = result[0].get("sentence_info", [])
+
+                    # 格式化说话人信息
+                    speakers = []
+                    for sentence in sentence_info:
+                        speakers.append({
+                            "speaker": str(sentence.get("spk", "unknown")),
+                            "text": sentence.get("text", ""),
+                            "start": sentence.get("start", 0),
+                            "end": sentence.get("end", 0),
+                        })
+
+                    response["sentences"] = speakers
+
+                    # 统计说话人
+                    unique_speakers = set(str(s["speaker"]) for s in speakers)
+                    response["speaker_count"] = len(unique_speakers)
+                    response["speakers"] = list(unique_speakers)
+
+                return response
             else:
                 return {
                     "success": False,
@@ -196,19 +231,20 @@ class ASREngine:
 _asr_engine: Optional[ASREngine] = None
 
 
-def get_asr_engine(device="cpu") -> ASREngine:
+def get_asr_engine(device="cpu", enable_speaker_diarization=False) -> ASREngine:
     """
     获取 ASR 引擎单例
 
     Args:
         device: 设备类型，"cpu" 或 "cuda"
+        enable_speaker_diarization: 是否启用说话人分离
 
     Returns:
         ASR 引擎实例
     """
     global _asr_engine
-    if _asr_engine is None or _asr_engine._device != device:
-        _asr_engine = ASREngine(device=device)
+    if _asr_engine is None or _asr_engine._device != device or getattr(_asr_engine, '_speaker_enabled', False) != enable_speaker_diarization:
+        _asr_engine = ASREngine(device=device, enable_speaker_diarization=enable_speaker_diarization)
     return _asr_engine
 
 

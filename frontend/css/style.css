@@ -275,6 +275,57 @@ section {
     color: var(--text-secondary);
 }
 
+.switch-option {
+    cursor: pointer;
+    position: relative;
+    display: inline-block;
+}
+
+.switch-option input[type="checkbox"] {
+    position: absolute;
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.switch-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 16px;
+    border: 2px solid var(--border-color);
+    border-radius: var(--radius);
+    transition: all 0.3s;
+    background: white;
+}
+
+.switch-option:hover .switch-label {
+    border-color: var(--primary-color);
+    background: #f0f7ff;
+}
+
+.switch-option input[type="checkbox"]:checked + .switch-label {
+    border-color: var(--primary-color);
+    background: #e6f2ff;
+    color: var(--primary-color);
+}
+
+.switch-icon {
+    font-size: 20px;
+}
+
+.switch-name {
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.switch-hint {
+    font-size: 12px;
+    color: var(--text-secondary);
+    margin-top: 8px;
+    margin-left: 0;
+}
+
 /* ==================== 按钮样式 ==================== */
 .btn {
     padding: 12px 24px;
@@ -546,6 +597,48 @@ section {
 .result-error {
     color: var(--danger-color);
     font-size: 14px;
+}
+
+/* 说话人信息样式 */
+.speaker-info {
+    background: #f0f7ff;
+    padding: 8px 12px;
+    border-radius: var(--radius);
+    margin-bottom: 12px;
+    font-size: 13px;
+    color: var(--primary-color);
+}
+
+.speaker-section {
+    margin-bottom: 12px;
+    padding: 8px 12px;
+    background: #f8f9fa;
+    border-radius: var(--radius);
+    border-left: 3px solid var(--primary-color);
+}
+
+.speaker-section strong {
+    color: var(--primary-color);
+    display: block;
+    margin-bottom: 6px;
+}
+
+.speaker-sentence {
+    font-size: 13px;
+    color: var(--text-secondary);
+    padding: 4px 0 4px 12px;
+    line-height: 1.6;
+}
+
+.result-text-full {
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid var(--border-color);
+    font-size: 13px;
+}
+
+.result-text-full strong {
+    color: var(--text-primary);
 }
 
 /* ==================== 页脚 ==================== */

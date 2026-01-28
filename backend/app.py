@@ -26,6 +26,7 @@ processing_state = {
     "results": [],
     "current_file": "",
     "device": "cpu",  # 当前使用的设备
+    "speaker_diarization": False,  # 是否启用说话人分离
 }
 
 
@@ -99,7 +100,8 @@ def start_recognition():
             {"path": "/path/to/audio1.wav", ...},
             {"path": "/path/to/audio2.wav", ...}
         ],
-        "device": "cpu"  // 可选，"cpu" 或 "cuda"，默认 "cpu"
+        "device": "cpu",  // 可选，"cpu" 或 "cuda"，默认 "cpu"
+        "speaker_diarization": false  // 可选，是否启用说话人分离，默认 false
     }
 
     返回:
@@ -114,6 +116,7 @@ def start_recognition():
         data = request.get_json()
         files = data.get('files', [])
         device = data.get('device', 'cpu')  # 默认使用 CPU
+        speaker_diarization = data.get('speaker_diarization', False)  # 默认不启用说话人分离
 
         if not files:
             return jsonify({
@@ -135,6 +138,7 @@ def start_recognition():
             "results": [],
             "current_file": "",
             "device": device,
+            "speaker_diarization": speaker_diarization,
         })
 
         # 获取音频文件路径列表
@@ -143,7 +147,7 @@ def start_recognition():
         # 在后台线程中处理
         def process_batch():
             global processing_state
-            asr_engine = get_asr_engine(device=device)
+            asr_engine = get_asr_engine(device=device, enable_speaker_diarization=speaker_diarization)
 
             for i, audio_path in enumerate(audio_paths):
                 if not processing_state["is_processing"]:
@@ -174,9 +178,10 @@ def start_recognition():
         thread.daemon = True
         thread.start()
 
+        speaker_info = " + 说话人分离" if speaker_diarization else ""
         return jsonify({
             "success": True,
-            "message": f"开始识别 {len(files)} 个音频文件 (使用 {device.upper()})"
+            "message": f"开始识别 {len(files)} 个音频文件 (使用 {device.upper()}{speaker_info})"
         })
 
     except Exception as e:
