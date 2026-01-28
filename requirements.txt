@@ -1,0 +1,18 @@
+# Web Framework
+flask>=3.0.0
+flask-cors>=4.0.0
+
+# Fun-ASR 语音识别
+# 注意：需要先安装系统依赖（ffmpeg等）
+funasr>=1.0.0
+
+# PyTorch (Fun-ASR 依赖)
+torch>=2.0.0
+torchaudio>=2.0.0
+
+# 音频处理
+librosa>=0.10.0
+soundfile>=0.12.0
+
+# 工具库
+python-dotenv>=1.0.0

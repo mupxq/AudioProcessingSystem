@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fun-ASR 语音识别批量处理系统</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="container">
+        <!-- 顶部标题栏 -->
+        <header class="header">
+            <h1>🎙️ Fun-ASR 语音识别批量处理系统</h1>
+            <p class="subtitle">本地批量语音识别，自动导出 Markdown 结果</p>
+        </header>
+
+        <!-- 主要内容区 -->
+        <main class="main-content">
+            <!-- 文件夹选择区 -->
+            <section class="folder-section">
+                <div class="section-title">📁 选择音频文件夹</div>
+                <div class="folder-input-group">
+                    <input
+                        type="text"
+                        id="folderPath"
+                        class="folder-input"
+                        placeholder="输入音频文件夹的本地路径..."
+                    >
+                    <button id="scanBtn" class="btn btn-primary">
+                        <span class="btn-icon">🔍</span>
+                        扫描文件夹
+                    </button>
+                </div>
+                <div class="folder-hint">
+                    <p>💡 提示：输入本地文件夹路径，例如：</p>
+                    <p class="folder-example">Windows: <code>C:\Users\用户名\Documents\音频文件</code></p>
+                    <p class="folder-example">Mac/Linux: <code>/Users/用户名/Documents/音频文件</code></p>
+                </div>
+            </section>
+
+            <!-- 设置区 -->
+            <section class="settings-section">
+                <div class="section-title">⚙️ 处理设置</div>
+                <div class="settings-row">
+                    <div class="setting-item">
+                        <label class="setting-label">处理设备:</label>
+                        <div class="device-selector">
+                            <label class="device-option">
+                                <input type="radio" name="device" value="cpu" checked>
+                                <span class="device-label">
+                                    <span class="device-icon">🖥️</span>
+                                    <span class="device-name">CPU</span>
+                                </span>
+                            </label>
+                            <label class="device-option" id="gpuOption">
+                                <input type="radio" name="device" value="cuda">
+                                <span class="device-label">
+                                    <span class="device-icon">🎮</span>
+                                    <span class="device-name">GPU (CUDA)</span>
+                                </span>
+                            </label>
+                        </div>
+                        <div class="device-status" id="deviceStatus">
+                            <span class="status-dot"></span>
+                            <span class="status-text">正在检测设备...</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 文件列表区 -->
+            <section class="files-section">
+                <div class="section-header">
+                    <div class="section-title">📋 音频文件列表</div>
+                    <div class="file-count">
+                        已找到 <span id="fileCount">0</span> 个音频文件
+                    </div>
+                </div>
+
+                <div class="files-table-wrapper">
+                    <table class="files-table" id="filesTable">
+                        <thead>
+                            <tr>
+                                <th width="50">#</th>
+                                <th>文件名</th>
+                                <th width="100">大小</th>
+                                <th width="100">状态</th>
+                                <th width="150">操作</th>
+                            </tr>
+                        </thead>
+                        <tbody id="filesTableBody">
+                            <tr class="empty-row">
+                                <td colspan="5" class="empty-text">
+                                    请先扫描文件夹获取音频文件列表
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- 操作按钮区 -->
+            <section class="actions-section">
+                <div class="actions-left">
+                    <button id="startBtn" class="btn btn-success btn-large" disabled>
+                        <span class="btn-icon">▶️</span>
+                        开始识别
+                    </button>
+                    <button id="stopBtn" class="btn btn-danger btn-large" style="display: none;">
+                        <span class="btn-icon">⏸️</span>
+                        停止识别
+                    </button>
+                </div>
+                <div class="actions-right">
+                    <button id="exportBtn" class="btn btn-secondary" disabled>
+                        <span class="btn-icon">📥</span>
+                        导出结果
+                    </button>
+                    <button id="clearBtn" class="btn btn-secondary" disabled>
+                        <span class="btn-icon">🗑️</span>
+                        清空列表
+                    </button>
+                </div>
+            </section>
+
+            <!-- 进度显示区 -->
+            <section class="progress-section" id="progressSection" style="display: none;">
+                <div class="section-title">⏳ 处理进度</div>
+                <div class="progress-bar-wrapper">
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progressFill"></div>
+                    </div>
+                    <div class="progress-text" id="progressText">0 / 0</div>
+                </div>
+                <div class="current-file">
+                    正在处理: <span id="currentFile">-</span>
+                </div>
+            </section>
+
+            <!-- 结果预览区 -->
+            <section class="results-section" id="resultsSection" style="display: none;">
+                <div class="section-title">📝 识别结果预览</div>
+                <div class="results-list" id="resultsList">
+                    <!-- 结果项会动态添加到这里 -->
+                </div>
+            </section>
+        </main>
+
+        <!-- 页脚 -->
+        <footer class="footer">
+            <p>Fun-ASR 语音识别批量处理系统 | 本地运行，数据不上传</p>
+        </footer>
+    </div>
+
+    <!-- 加载提示 -->
+    <div class="loading-overlay" id="loadingOverlay" style="display: none;">
+        <div class="loading-spinner"></div>
+        <div class="loading-text" id="loadingText">正在处理...</div>
+    </div>
+
+    <!-- 提示消息 -->
+    <div class="toast" id="toast"></div>
+
+    <script src="js/app.js"></script>
+</body>
+</html>
