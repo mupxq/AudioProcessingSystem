@@ -7,102 +7,135 @@
     <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
+    <div class="bg-grid"></div>
+    <div class="bg-noise"></div>
+
     <div class="container">
         <!-- 顶部标题栏 -->
         <header class="header">
-            <h1>🎙️ Fun-ASR 语音识别批量处理系统</h1>
-            <p class="subtitle">本地批量语音识别，自动导出 Markdown 结果</p>
+            <div class="header-decoration">
+                <div class="wave-bar"></div>
+                <div class="wave-bar"></div>
+                <div class="wave-bar"></div>
+                <div class="wave-bar"></div>
+                <div class="wave-bar"></div>
+            </div>
+            <h1 class="title">Fun-ASR</h1>
+            <p class="subtitle">语音识别批量处理系统</p>
+            <p class="tagline">本地批量语音识别 · 自动导出 Markdown 结果</p>
         </header>
 
         <!-- 主要内容区 -->
         <main class="main-content">
             <!-- 文件夹选择区 -->
-            <section class="folder-section">
-                <div class="section-title">📁 选择音频文件夹</div>
-                <div class="folder-input-group">
+            <section class="card folder-section">
+                <div class="card-header">
+                    <span class="card-label">选择音频文件夹</span>
+                    <span class="card-icon">📂</span>
+                </div>
+                <div class="folder-input-wrapper">
                     <input
                         type="text"
                         id="folderPath"
                         class="folder-input"
-                        placeholder="输入音频文件夹的本地路径..."
+                        placeholder="输入本地路径或点击按钮选择..."
                     >
-                    <button id="scanBtn" class="btn btn-primary">
-                        <span class="btn-icon">🔍</span>
-                        扫描文件夹
+                    <label class="folder-select-btn">
+                        <input type="file" id="folderSelector" webkitdirectory directory multiple>
+                        <span class="btn-text">选择文件夹</span>
+                        <svg class="btn-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+                        </svg>
+                    </label>
+                    <button id="scanBtn" class="scan-btn">
+                        <svg class="btn-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="11" cy="11" r="8"/>
+                            <path d="m21 21-4.35-4.35"/>
+                        </svg>
+                        <span>扫描</span>
                     </button>
                 </div>
                 <div class="folder-hint">
-                    <p>💡 提示：输入本地文件夹路径，例如：</p>
-                    <p class="folder-example">Windows: <code>C:\Users\用户名\Documents\音频文件</code></p>
-                    <p class="folder-example">Mac/Linux: <code>/Users/用户名/Documents/音频文件</code></p>
+                    <span class="hint-label">示例路径</span>
+                    <div class="hint-examples">
+                        <code>Windows: C:\Users\用户名\Documents\音频文件</code>
+                        <code>Mac/Linux: /Users/用户名/Documents/音频文件</code>
+                    </div>
                 </div>
             </section>
 
             <!-- 设置区 -->
-            <section class="settings-section">
-                <div class="section-title">⚙️ 处理设置</div>
-                <div class="settings-row">
-                    <div class="setting-item">
-                        <label class="setting-label">处理设备:</label>
+            <section class="card settings-section">
+                <div class="card-header">
+                    <span class="card-label">处理设置</span>
+                    <span class="card-icon">⚙</span>
+                </div>
+                <div class="settings-grid">
+                    <div class="setting-group">
+                        <span class="setting-title">处理设备</span>
                         <div class="device-selector">
                             <label class="device-option">
                                 <input type="radio" name="device" value="cpu" checked>
-                                <span class="device-label">
-                                    <span class="device-icon">🖥️</span>
+                                <span class="device-card">
+                                    <span class="device-emoji">🖥</span>
                                     <span class="device-name">CPU</span>
                                 </span>
                             </label>
                             <label class="device-option" id="gpuOption">
                                 <input type="radio" name="device" value="cuda">
-                                <span class="device-label">
-                                    <span class="device-icon">🎮</span>
-                                    <span class="device-name">GPU (CUDA)</span>
+                                <span class="device-card">
+                                    <span class="device-emoji">🎮</span>
+                                    <span class="device-name">GPU</span>
+                                    <span class="device-badge">CUDA</span>
                                 </span>
                             </label>
                         </div>
                         <div class="device-status" id="deviceStatus">
-                            <span class="status-dot"></span>
+                            <span class="status-indicator"></span>
                             <span class="status-text">正在检测设备...</span>
                         </div>
                     </div>
-                    <div class="setting-item">
-                        <label class="setting-label">高级选项:</label>
-                        <label class="switch-option">
+                    <div class="setting-group">
+                        <span class="setting-title">高级选项</span>
+                        <label class="toggle-option">
                             <input type="checkbox" id="speakerDiarization">
-                            <span class="switch-label">
-                                <span class="switch-icon">👥</span>
-                                <span class="switch-name">启用说话人分离</span>
+                            <span class="toggle-card">
+                                <span class="toggle-emoji">👥</span>
+                                <div class="toggle-content">
+                                    <span class="toggle-name">说话人分离</span>
+                                    <span class="toggle-desc">识别并标注不同说话人</span>
+                                </div>
                             </span>
                         </label>
-                        <div class="switch-hint">识别不同说话人并标注</div>
                     </div>
                 </div>
             </section>
 
             <!-- 文件列表区 -->
-            <section class="files-section">
-                <div class="section-header">
-                    <div class="section-title">📋 音频文件列表</div>
-                    <div class="file-count">
-                        已找到 <span id="fileCount">0</span> 个音频文件
-                    </div>
+            <section class="card files-section">
+                <div class="card-header">
+                    <span class="card-label">音频文件列表</span>
+                    <span class="file-count">
+                        <span id="fileCount">0</span> 个文件
+                    </span>
                 </div>
 
                 <div class="files-table-wrapper">
                     <table class="files-table" id="filesTable">
                         <thead>
                             <tr>
-                                <th width="50">#</th>
+                                <th width="60">#</th>
                                 <th>文件名</th>
                                 <th width="100">大小</th>
                                 <th width="100">状态</th>
-                                <th width="150">操作</th>
+                                <th width="120">操作</th>
                             </tr>
                         </thead>
                         <tbody id="filesTableBody">
                             <tr class="empty-row">
                                 <td colspan="5" class="empty-text">
-                                    请先扫描文件夹获取音频文件列表
+                                    <span class="empty-icon">📭</span>
+                                    <span class="empty-label">请先扫描文件夹获取音频文件列表</span>
                                 </td>
                             </tr>
                         </tbody>
@@ -112,65 +145,80 @@
 
             <!-- 操作按钮区 -->
             <section class="actions-section">
-                <div class="actions-left">
-                    <button id="startBtn" class="btn btn-success btn-large" disabled>
-                        <span class="btn-icon">▶️</span>
-                        开始识别
-                    </button>
-                    <button id="stopBtn" class="btn btn-danger btn-large" style="display: none;">
-                        <span class="btn-icon">⏸️</span>
-                        停止识别
-                    </button>
-                </div>
-                <div class="actions-right">
-                    <button id="exportBtn" class="btn btn-secondary" disabled>
-                        <span class="btn-icon">📥</span>
-                        导出结果
-                    </button>
-                    <button id="clearBtn" class="btn btn-secondary" disabled>
-                        <span class="btn-icon">🗑️</span>
-                        清空列表
-                    </button>
-                </div>
+                <button id="startBtn" class="action-btn action-btn-primary" disabled>
+                    <span class="btn-emoji">▶</span>
+                    <span>开始识别</span>
+                </button>
+                <button id="stopBtn" class="action-btn action-btn-danger" style="display: none;">
+                    <span class="btn-emoji">⏸</span>
+                    <span>停止识别</span>
+                </button>
+                <button id="exportBtn" class="action-btn action-btn-secondary" disabled>
+                    <span class="btn-emoji">📥</span>
+                    <span>导出结果</span>
+                </button>
+                <button id="clearBtn" class="action-btn action-btn-ghost" disabled>
+                    <span class="btn-emoji">🗑</span>
+                    <span>清空</span>
+                </button>
             </section>
 
             <!-- 进度显示区 -->
-            <section class="progress-section" id="progressSection" style="display: none;">
-                <div class="section-title">⏳ 处理进度</div>
-                <div class="progress-bar-wrapper">
-                    <div class="progress-bar">
-                        <div class="progress-fill" id="progressFill"></div>
-                    </div>
-                    <div class="progress-text" id="progressText">0 / 0</div>
+            <section class="card progress-section" id="progressSection" style="display: none;">
+                <div class="card-header">
+                    <span class="card-label">处理进度</span>
+                    <span class="card-icon">⏳</span>
                 </div>
-                <div class="current-file">
-                    正在处理: <span id="currentFile">-</span>
+                <div class="progress-container">
+                    <div class="progress-bar-wrapper">
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="progressFill">
+                                <div class="progress-glow"></div>
+                            </div>
+                        </div>
+                        <span class="progress-percentage" id="progressPercentage">0%</span>
+                    </div>
+                    <div class="progress-stats">
+                        <span id="progressText">0 / 0</span>
+                        <span class="current-file">处理中: <span id="currentFile">-</span></span>
+                    </div>
                 </div>
             </section>
 
             <!-- 结果预览区 -->
-            <section class="results-section" id="resultsSection" style="display: none;">
-                <div class="section-title">📝 识别结果预览</div>
+            <section class="card results-section" id="resultsSection" style="display: none;">
+                <div class="card-header">
+                    <span class="card-label">识别结果预览</span>
+                    <span class="card-icon">📝</span>
+                </div>
                 <div class="results-list" id="resultsList">
-                    <!-- 结果项会动态添加到这里 -->
                 </div>
             </section>
         </main>
 
         <!-- 页脚 -->
         <footer class="footer">
-            <p>Fun-ASR 语音识别批量处理系统 | 本地运行，数据不上传</p>
+            <p>Fun-ASR 语音识别批量处理系统 <span class="separator">·</span> 本地运行，数据不上传</p>
         </footer>
     </div>
 
-    <!-- 加载提示 -->
+    <!-- 加载遮罩 -->
     <div class="loading-overlay" id="loadingOverlay" style="display: none;">
-        <div class="loading-spinner"></div>
-        <div class="loading-text" id="loadingText">正在处理...</div>
+        <div class="loading-content">
+            <div class="loading-spinner">
+                <div class="spinner-ring"></div>
+                <div class="spinner-ring"></div>
+                <div class="spinner-ring"></div>
+            </div>
+            <div class="loading-text" id="loadingText">正在处理...</div>
+        </div>
     </div>
 
     <!-- 提示消息 -->
-    <div class="toast" id="toast"></div>
+    <div class="toast" id="toast">
+        <span class="toast-icon"></span>
+        <span class="toast-message"></span>
+    </div>
 
     <script src="js/app.js"></script>
 </body>

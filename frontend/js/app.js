@@ -1,5 +1,6 @@
 /**
  * Fun-ASR 语音识别批量处理系统 - 前端逻辑
+ * Modern Dark Dashboard Theme
  */
 
 // API 基础路径
@@ -11,13 +12,14 @@ const state = {
     results: [],
     isProcessing: false,
     progressInterval: null,
-    device: 'cpu',  // 当前选择的设备
-    cudaAvailable: false  // CUDA 是否可用
+    device: 'cpu',
+    cudaAvailable: false
 };
 
 // DOM 元素
 const elements = {
     folderPath: document.getElementById('folderPath'),
+    folderSelector: document.getElementById('folderSelector'),
     scanBtn: document.getElementById('scanBtn'),
     startBtn: document.getElementById('startBtn'),
     stopBtn: document.getElementById('stopBtn'),
@@ -27,6 +29,7 @@ const elements = {
     filesTableBody: document.getElementById('filesTableBody'),
     progressSection: document.getElementById('progressSection'),
     progressFill: document.getElementById('progressFill'),
+    progressPercentage: document.getElementById('progressPercentage'),
     progressText: document.getElementById('progressText'),
     currentFile: document.getElementById('currentFile'),
     resultsSection: document.getElementById('resultsSection'),
@@ -34,6 +37,8 @@ const elements = {
     loadingOverlay: document.getElementById('loadingOverlay'),
     loadingText: document.getElementById('loadingText'),
     toast: document.getElementById('toast'),
+    toastIcon: document.querySelector('.toast-icon'),
+    toastMessage: document.querySelector('.toast-message'),
     gpuOption: document.getElementById('gpuOption'),
     deviceStatus: document.getElementById('deviceStatus'),
     speakerDiarization: document.getElementById('speakerDiarization')
@@ -164,7 +169,7 @@ async function exportResults(results) {
  * 显示提示消息
  */
 function showToast(message, type = 'info') {
-    elements.toast.textContent = message;
+    elements.toastMessage.textContent = message;
     elements.toast.className = `toast ${type} show`;
 
     setTimeout(() => {
@@ -191,7 +196,8 @@ function updateFilesTable() {
         tbody.innerHTML = `
             <tr class="empty-row">
                 <td colspan="5" class="empty-text">
-                    请先扫描文件夹获取音频文件列表
+                    <span class="empty-icon">📭</span>
+                    <span class="empty-label">请先扫描文件夹获取音频文件列表</span>
                 </td>
             </tr>
         `;
@@ -217,8 +223,8 @@ function updateFilesTable() {
             </td>
             <td>
                 ${file.status === 'completed' && file.result ?
-                    '<button class="btn btn-secondary" onclick="previewResult(' + index + ')" style="padding: 6px 12px; font-size: 12px;">查看</button>' :
-                    '-'}
+                    `<button class="action-btn action-btn-secondary" onclick="previewResult(${index})" style="padding: 6px 12px; font-size: 11px; min-width: auto;">查看</button>` :
+                    '<span style="color: var(--text-muted);">—</span>'}
             </td>
         `;
         tbody.appendChild(tr);
@@ -244,8 +250,9 @@ function getStatusText(status) {
 function updateProgress(progressData) {
     const { current_index, total, current_file } = progressData;
 
-    const percentage = total > 0 ? (current_index / total) * 100 : 0;
+    const percentage = total > 0 ? Math.round((current_index / total) * 100) : 0;
     elements.progressFill.style.width = `${percentage}%`;
+    elements.progressPercentage.textContent = `${percentage}%`;
     elements.progressText.textContent = `${current_index} / ${total}`;
     elements.currentFile.textContent = current_file || '-';
 
@@ -272,7 +279,6 @@ function addResultPreview(result, index) {
     resultItem.className = `result-item ${result.success ? 'success' : 'failed'}`;
 
     if (result.success) {
-        // 检查是否启用了说话人分离
         const hasSpeakers = result.speaker_diarization_enabled && result.sentences && result.sentences.length > 0;
 
         let contentHtml = `
@@ -283,14 +289,12 @@ function addResultPreview(result, index) {
         `;
 
         if (hasSpeakers) {
-            // 显示说话人信息
             const speakerCount = result.speaker_count || 0;
             const speakers = result.speakers || [];
 
-            // 创建说话人名称映射
             const speakerNames = {};
             for (let i = 0; i < speakers.length; i++) {
-                speakerNames[speakers[i]] = `说话人${String.fromCharCode(65 + i)}`; // 说话人A, 说话人B, ...
+                speakerNames[speakers[i]] = `说话人${String.fromCharCode(65 + i)}`;
             }
 
             contentHtml += `
@@ -300,7 +304,6 @@ function addResultPreview(result, index) {
                 <div class="result-text">
             `;
 
-            // 按说话人分组显示
             const speakerText = {};
             result.sentences.forEach(sentence => {
                 const speaker = sentence.speaker || 'unknown';
@@ -310,7 +313,6 @@ function addResultPreview(result, index) {
                 speakerText[speaker].push(sentence);
             });
 
-            // 显示每个说话人的内容
             for (const [speaker, sentences] of Object.entries(speakerText)) {
                 const speakerName = speakerNames[speaker] || speaker;
                 contentHtml += `<div class="speaker-section"><strong>${speakerName}:</strong>`;
@@ -358,7 +360,6 @@ window.previewResult = function(index) {
 
     addResultPreview(file.result, index);
 
-    // 滚动到结果区
     elements.resultsSection.scrollIntoView({ behavior: 'smooth' });
 };
 
@@ -384,13 +385,30 @@ function updateButtons() {
 // ==================== 事件处理 ====================
 
 /**
+ * 文件夹选择器变更事件
+ */
+elements.folderSelector.addEventListener('change', (e) => {
+    const files = e.target.files;
+
+    if (files && files.length > 0) {
+        // 获取文件夹路径（从第一个文件的路径中提取）
+        const firstFile = files[0];
+        const folderPath = firstFile.webkitRelativePath.split('/').slice(0, -1).join('/');
+
+        elements.folderPath.value = folderPath;
+
+        showToast(`已选择文件夹，包含 ${files.length} 个文件`, 'info');
+    }
+});
+
+/**
  * 扫描文件夹按钮点击
  */
 elements.scanBtn.addEventListener('click', async () => {
     const folderPath = elements.folderPath.value.trim();
 
     if (!folderPath) {
-        showToast('请输入文件夹路径', 'error');
+        showToast('请输入或选择文件夹路径', 'error');
         return;
     }
 
@@ -409,7 +427,6 @@ elements.scanBtn.addEventListener('click', async () => {
         updateFilesTable();
         updateButtons();
 
-        // 隐藏结果区
         elements.resultsSection.style.display = 'none';
 
         showToast(`找到 ${data.count} 个音频文件`, 'success');
@@ -429,16 +446,13 @@ elements.startBtn.addEventListener('click', async () => {
         return;
     }
 
-    // 获取选中的设备
     const selectedDevice = document.querySelector('input[name="device"]:checked').value;
 
-    // 如果选择 GPU 但不可用，提示用户
     if (selectedDevice === 'cuda' && !state.cudaAvailable) {
         showToast('GPU (CUDA) 不可用，请使用 CPU 模式', 'error');
         return;
     }
 
-    // 获取说话人分离开关状态
     const speakerDiarization = elements.speakerDiarization.checked;
 
     try {
@@ -451,24 +465,20 @@ elements.startBtn.addEventListener('click', async () => {
 
         updateButtons();
 
-        // 开始轮询进度
         state.progressInterval = setInterval(async () => {
             const progressData = await getProgress();
 
             if (progressData) {
                 updateProgress(progressData);
 
-                // 保存结果
                 if (progressData.results) {
                     state.results = progressData.results;
                 }
 
-                // 检查是否完成
                 if (!progressData.is_processing) {
                     clearInterval(state.progressInterval);
                     state.isProcessing = false;
 
-                    // 显示所有结果
                     elements.resultsList.innerHTML = '';
                     state.results.forEach((result, index) => {
                         addResultPreview(result, index);
@@ -542,13 +552,17 @@ elements.clearBtn.addEventListener('click', () => {
         elements.filesTableBody.innerHTML = `
             <tr class="empty-row">
                 <td colspan="5" class="empty-text">
-                    请先扫描文件夹获取音频文件列表
+                    <span class="empty-icon">📭</span>
+                    <span class="empty-label">请先扫描文件夹获取音频文件列表</span>
                 </td>
             </tr>
         `;
         elements.fileCount.textContent = '0';
         elements.progressSection.style.display = 'none';
         elements.resultsSection.style.display = 'none';
+
+        elements.folderPath.value = '';
+        elements.folderSelector.value = '';
 
         updateButtons();
         showToast('列表已清空', 'info');
@@ -591,6 +605,6 @@ async function checkDeviceStatus() {
 
 document.addEventListener('DOMContentLoaded', () => {
     updateButtons();
-    checkDeviceStatus();  // 检测设备状态
+    checkDeviceStatus();
     console.log('Fun-ASR 语音识别系统已加载');
 });

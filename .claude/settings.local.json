@@ -9,11 +9,15 @@
       "Bash(source:*)",
       "Bash(pip install:*)",
       "Bash(python:*)",
-      "mcp__tavily-mcp__tavily_search"
+      "mcp__tavily-mcp__tavily_search",
+      "Skill(frontend-design)"
     ]
   },
   "enableAllProjectMcpServers": true,
   "enabledMcpjsonServers": [
     "lark-mcp"
-  ]
+  ],
+  "enabledPlugins": {
+    "frontend-design@claude-code-plugins": true
+  }
 }

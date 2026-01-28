@@ -90,6 +90,7 @@ class ASREngine:
                 "model": "paraformer-zh",  # 中文语音识别
                 "vad_model": "fsmn-vad",   # 语音活动检测
                 "punc_model": "ct-punc",   # 标点恢复
+                "disable_update": True,    # 禁用自动更新
             }
 
             # 添加说话人分离模型
