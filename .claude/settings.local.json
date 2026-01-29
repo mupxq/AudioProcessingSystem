@@ -10,7 +10,11 @@
       "Bash(pip install:*)",
       "Bash(python:*)",
       "mcp__tavily-mcp__tavily_search",
-      "Skill(frontend-design)"
+      "Skill(frontend-design)",
+      "Bash(ffmpeg:*)",
+      "Bash(tree:*)",
+      "Bash(find:*)",
+      "WebSearch"
     ]
   },
   "enableAllProjectMcpServers": true,

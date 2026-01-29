@@ -19,7 +19,6 @@ const state = {
 // DOM 元素
 const elements = {
     folderPath: document.getElementById('folderPath'),
-    folderSelector: document.getElementById('folderSelector'),
     scanBtn: document.getElementById('scanBtn'),
     startBtn: document.getElementById('startBtn'),
     stopBtn: document.getElementById('stopBtn'),
@@ -385,23 +384,6 @@ function updateButtons() {
 // ==================== 事件处理 ====================
 
 /**
- * 文件夹选择器变更事件
- */
-elements.folderSelector.addEventListener('change', (e) => {
-    const files = e.target.files;
-
-    if (files && files.length > 0) {
-        // 获取文件夹路径（从第一个文件的路径中提取）
-        const firstFile = files[0];
-        const folderPath = firstFile.webkitRelativePath.split('/').slice(0, -1).join('/');
-
-        elements.folderPath.value = folderPath;
-
-        showToast(`已选择文件夹，包含 ${files.length} 个文件`, 'info');
-    }
-});
-
-/**
  * 扫描文件夹按钮点击
  */
 elements.scanBtn.addEventListener('click', async () => {
@@ -562,7 +544,6 @@ elements.clearBtn.addEventListener('click', () => {
         elements.resultsSection.style.display = 'none';
 
         elements.folderPath.value = '';
-        elements.folderSelector.value = '';
 
         updateButtons();
         showToast('列表已清空', 'info');
